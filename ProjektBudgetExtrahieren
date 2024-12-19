@@ -38,18 +38,21 @@ Sub spez_Budgetplanung()
     wsTarget.Cells(1, 2).Value = "Rolle"
     
     ' Suche nach der Zeile und Spalte mit der Überschrift Jahr
-    headerRow = 0
-    headerCol = 0
-    For i = 1 To wsSource.Rows.Count
-        For j = 4 To wsSource.Columns.Count ' Suche ab Spalte D
-            If IsNumeric(wsSource.Cells(i, j).Value) And Len(wsSource.Cells(i, j).Value) = 4 Then
+' Suche nach der Zeile und Spalte mit der Überschrift Jahr
+headerRow = 0
+headerCol = 0
+For i = 1 To wsSource.Rows.Count
+    For j = 4 To wsSource.Columns.Count ' Suche ab Spalte D
+        If IsNumeric(wsSource.Cells(i, j).Value) And Len(wsSource.Cells(i, j).Value) = 4 Then
+            If wsSource.Cells(i, j).Value >= 2000 And wsSource.Cells(i, j).Value <= 2100 Then
                 headerRow = i
                 headerCol = j
                 Exit For
             End If
-        Next j
-        If headerRow > 0 Then Exit For
-    Next i
+        End If
+    Next j
+    If headerRow > 0 Then Exit For
+Next i
     
     If headerRow = 0 Then
         MsgBox "Überschrift Jahr nicht gefunden.", vbExclamation
@@ -112,15 +115,26 @@ Sub spez_Budgetplanung()
     ' Lösche Spalte C im neuen Arbeitsblatt
     wsTarget.Columns("C").Delete
     
+    ' Lösche die letzte Spalte, falls der Header "Spalte" enthält
+ 
+    
     ' Formatierung als Tabelle
     Dim tbl As ListObject
     Set tbl = wsTarget.ListObjects.Add(xlSrcRange, wsTarget.Range("A1").CurrentRegion, , xlYes)
     tbl.Name = "ProjektBudgetTabelle"
     tbl.TableStyle = "TableStyleMedium9"
     
+        Dim lastCol As Long
+    lastCol = wsTarget.Cells(1, wsTarget.Columns.Count).End(xlToLeft).Column
+    If InStr(1, wsTarget.Cells(1, lastCol).Value, "Spalte") > 0 Then
+        wsTarget.Columns(lastCol).Delete
+    End If
+    
     ' Aufräumen
     Application.CutCopyMode = False
     wsTarget.Cells(1, 1).Select
+    
+   
     
     MsgBox "Die Daten wurden erfolgreich extrahiert und formatiert.", vbInformation
 End Sub
