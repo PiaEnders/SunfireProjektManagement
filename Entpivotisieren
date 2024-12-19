@@ -9,6 +9,8 @@ Sub UnpivotTable()
     Dim targetRow As Long
     Dim lastChar As String
     Dim data As Variant
+    Dim targetData() As Variant
+    Dim wsExists As Boolean
 
     ' Find the worksheet with "spez Projektbudgetplan" in its name
     For Each wsSource In ThisWorkbook.Worksheets
@@ -17,40 +19,66 @@ Sub UnpivotTable()
             lastChar = Right(wsSource.Name, 1)
             ' Create a new worksheet name
             wsName = "entpivotisiert" & lastChar
-            ' Create a new worksheet for the unpivoted data
-            Set wsTarget = ThisWorkbook.Sheets.Add
-            wsTarget.Name = wsName
 
-            ' Set headers for the unpivoted table
-            wsTarget.Cells(1, 1).Value = "Rolle"
-            wsTarget.Cells(1, 2).Value = "Monat"
-            wsTarget.Cells(1, 3).Value = "SOLL in STD"
+            ' Check if the worksheet already exists
+            wsExists = False
+            For Each wsTarget In ThisWorkbook.Worksheets
+                If wsTarget.Name = wsName Then
+                    wsExists = True
+                    Exit For
+                End If
+            Next wsTarget
 
-            ' Get the last row and last column
-            lastRow = wsSource.Cells(wsSource.Rows.Count, "B").End(xlUp).Row
-            lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
+            ' If the worksheet does not exist, create it
+            If Not wsExists Then
+                Set wsTarget = ThisWorkbook.Sheets.Add
+                wsTarget.Name = wsName
 
-            ' Initialize target row for unpivoted data
-            targetRow = 2
+                ' Set headers for the unpivoted table
+                wsTarget.Cells(1, 1).Value = "Rolle"
+                wsTarget.Cells(1, 2).Value = "Monat"
+                wsTarget.Cells(1, 3).Value = "SOLL in STD"
 
-            ' Read data into array for faster processing
-            data = wsSource.Range(wsSource.Cells(2, 2), wsSource.Cells(lastRow, lastCol)).Value
+                ' Get the last row and last column
+                lastRow = wsSource.Cells(wsSource.Rows.Count, "B").End(xlUp).Row
+                lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
 
-            ' Loop through the data and unpivot
-            For i = 2 To UBound(data, 1)
-                For j = 2 To UBound(data, 2)
-                    header = wsSource.Cells(1, j + 1).Value
-                    If header <> "Total Months" Then
-                        wsTarget.Cells(targetRow, 1).Value = data(i, 1) ' Rolle
-                        wsTarget.Cells(targetRow, 2).Value = header ' Monat
-                        wsTarget.Cells(targetRow, 3).Value = data(i, j) ' SOLL in STD
-                        targetRow = targetRow + 1
-                    End If
-                Next j
-            Next i
+                ' Initialize target row for unpivoted data
+                targetRow = 2
+
+                ' Read data into array for faster processing
+                data = wsSource.Range(wsSource.Cells(2, 2), wsSource.Cells(lastRow, lastCol)).Value
+
+                ' Estimate the size of the target data array
+                ReDim targetData(1 To (lastRow - 1) * (lastCol - 2), 1 To 3)
+
+                ' Loop through the data and unpivot
+                For i = 1 To UBound(data, 1)
+                    For j = 2 To UBound(data, 2)
+                        header = wsSource.Cells(1, j + 1).Value
+                        If header <> "Total Months" Then
+                            targetData(targetRow - 1, 1) = data(i, 1) ' Rolle
+                            targetData(targetRow - 1, 2) = header ' Monat
+                            targetData(targetRow - 1, 3) = data(i, j) ' SOLL in STD
+                            targetRow = targetRow + 1
+                        End If
+                    Next j
+                Next i
+
+                ' Write the unpivoted data to the target sheet
+                wsTarget.Range("A2").Resize(targetRow - 2, 3).Value = targetData
+
+                ' Format as table with headers
+                With wsTarget.ListObjects.Add(SourceType:=xlSrcRange, Source:=wsTarget.Range("A1").Resize(targetRow - 1, 3), _
+                    XlListObjectHasHeaders:=xlYes)
+                    .TableStyle = "TableStyleMedium9"
+                End With
+            End If
+
+            ' Display message with the name of the original worksheet
+            MsgBox "Die Tabelle wurde erfolgreich entpivotisiert und in '" & wsName & "' gespeichert.", vbInformation
+            
             Exit For
         End If
     Next wsSource
-
-    MsgBox "Die Tabelle wurde erfolgreich entpivotisiert und in '" & wsName & "' gespeichert.", vbInformation
 End Sub
