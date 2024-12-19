@@ -8,6 +8,7 @@ Sub UnpivotTable()
     Dim header As String
     Dim targetRow As Long
     Dim lastChar As String
+    Dim data As Variant
 
     ' Find the worksheet with "spez Projektbudgetplan" in its name
     For Each wsSource In ThisWorkbook.Worksheets
@@ -21,10 +22,9 @@ Sub UnpivotTable()
             wsTarget.Name = wsName
 
             ' Set headers for the unpivoted table
-            wsTarget.Cells(1, 1).Value = "Projekt Nr"
-            wsTarget.Cells(1, 2).Value = "Rolle"
-            wsTarget.Cells(1, 3).Value = "Monat"
-            wsTarget.Cells(1, 4).Value = "SOLL in STD"
+            wsTarget.Cells(1, 1).Value = "Rolle"
+            wsTarget.Cells(1, 2).Value = "Monat"
+            wsTarget.Cells(1, 3).Value = "SOLL in STD"
 
             ' Get the last row and last column
             lastRow = wsSource.Cells(wsSource.Rows.Count, "B").End(xlUp).Row
@@ -33,15 +33,17 @@ Sub UnpivotTable()
             ' Initialize target row for unpivoted data
             targetRow = 2
 
+            ' Read data into array for faster processing
+            data = wsSource.Range(wsSource.Cells(2, 2), wsSource.Cells(lastRow, lastCol)).Value
+
             ' Loop through the data and unpivot
-            For i = 2 To lastRow
-                For j = 3 To lastCol
-                    header = wsSource.Cells(1, j).Value
+            For i = 2 To UBound(data, 1)
+                For j = 2 To UBound(data, 2)
+                    header = wsSource.Cells(1, j + 1).Value
                     If header <> "Total Months" Then
-                        wsTarget.Cells(targetRow, 1).Value = wsSource.Cells(i, 1).Value
-                        wsTarget.Cells(targetRow, 2).Value = wsSource.Cells(i, 2).Value
-                        wsTarget.Cells(targetRow, 3).Value = header
-                        wsTarget.Cells(targetRow, 4).Value = wsSource.Cells(i, j).Value
+                        wsTarget.Cells(targetRow, 1).Value = data(i, 1) ' Rolle
+                        wsTarget.Cells(targetRow, 2).Value = header ' Monat
+                        wsTarget.Cells(targetRow, 3).Value = data(i, j) ' SOLL in STD
                         targetRow = targetRow + 1
                     End If
                 Next j
