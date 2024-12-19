@@ -1,1 +1,57 @@
-
+Sub KopiereUndVergleicheOptimiert()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim wsBereinigt As Worksheet
+    Dim lastRowSource As Long
+    Dim lastRowBereinigt As Long
+    Dim i As Long, j As Long
+    Dim found As Range
+    Dim nameColSource As Long
+    Dim rolleColSource As Long
+    Dim nameColBereinigt As Long
+    Dim abteilungColBereinigt As Long
+    
+    ' Setze die Arbeitsblätter
+    Set wsSource = ThisWorkbook.Sheets("Name_Team_maxRolle")
+    Set wsBereinigt = ThisWorkbook.Sheets("Personio - Bereinigt")
+    
+    ' Erstelle das Zielarbeitsblatt oder überschreibe es, wenn es existiert
+    On Error Resume Next
+    Set wsTarget = ThisWorkbook.Sheets("Name Abteilung Rolle")
+    On Error GoTo 0
+    If wsTarget Is Nothing Then
+        Set wsTarget = ThisWorkbook.Sheets.Add
+        wsTarget.Name = "Name Abteilung Rolle"
+    Else
+        wsTarget.Cells.Clear
+    End If
+    
+    ' Finde die Spaltenindizes für "Name" und "Rolle" im Quellarbeitsblatt
+    nameColSource = Application.Match("Name", wsSource.Rows(1), 0)
+    rolleColSource = Application.Match("Rolle", wsSource.Rows(1), 0)
+    
+    ' Kopiere die Spalten "Name" und "Rolle" aus dem Quellarbeitsblatt in das Zielarbeitsblatt
+    wsTarget.Cells(1, 1).Value = "Name"
+    wsTarget.Cells(1, 2).Value = "Rolle"
+    wsSource.Columns(nameColSource).Copy Destination:=wsTarget.Columns(1)
+    wsSource.Columns(rolleColSource).Copy Destination:=wsTarget.Columns(2)
+    
+    ' Füge die neue Spalte "Abteilung" hinzu
+    wsTarget.Cells(1, 3).Value = "Abteilung"
+    
+    ' Finde die letzte benutzte Zeile in beiden Arbeitsblättern
+    lastRowSource = wsTarget.Cells(wsTarget.Rows.Count, "A").End(xlUp).Row
+    lastRowBereinigt = wsBereinigt.Cells(wsBereinigt.Rows.Count, "A").End(xlUp).Row
+    
+    ' Finde die Spaltenindizes für "Name" und "Abteilung" im Bereinigt-Arbeitsblatt
+    nameColBereinigt = Application.Match("Name", wsBereinigt.Rows(1), 0)
+    abteilungColBereinigt = Application.Match("Abteilung", wsBereinigt.Rows(1), 0)
+    
+    ' Vergleiche die Werte der Spalte "Name" und füge die Abteilung hinzu
+    For i = 2 To lastRowSource
+        Set found = wsBereinigt.Columns(nameColBereinigt).Find(wsTarget.Cells(i, 1).Value, LookIn:=xlValues, LookAt:=xlWhole)
+        If Not found Is Nothing Then
+            wsTarget.Cells(i, 3).Value = wsBereinigt.Cells(found.Row, abteilungColBereinigt).Value
+        End If
+    Next i
+End Sub
