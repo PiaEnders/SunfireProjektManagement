@@ -1,1 +1,50 @@
 'Namen werden zusammengefügt und die Doppelten Werte entfernt
+Sub BereinigePersonioAuszug()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim nameDict As Object
+    Dim duplicateNames As String
+    
+    ' Setze die Quelle und Ziel Arbeitsblätter
+    Set wsSource = ThisWorkbook.Sheets("Personio - Employees")
+    Set wsTarget = ThisWorkbook.Sheets("Personio bereinigt")
+    
+    ' Initialisiere das Dictionary für die Namen
+    Set nameDict = CreateObject("Scripting.Dictionary")
+    duplicateNames = ""
+    
+    ' Füge die neue Spalte "Name" hinzu
+    wsSource.Cells(1, wsSource.Columns.Count + 1).Value = "Name"
+    
+    ' Kombiniere Vorname und Nachname in die neue Spalte "Name"
+    lastRow = wsSource.Cells(wsSource.Rows.Count, "A").End(xlUp).Row
+    For i = 2 To lastRow
+        wsSource.Cells(i, wsSource.Columns.Count).Value = wsSource.Cells(i, "Vorname (bürgerlich)").Value & " " & wsSource.Cells(i, "Nachname (bürgerlich)").Value
+    Next i
+    
+    ' Überprüfe auf doppelte Namen und lösche die Zeilen
+    For i = lastRow To 2 Step -1
+        If nameDict.exists(wsSource.Cells(i, wsSource.Columns.Count).Value) Then
+            duplicateNames = duplicateNames & wsSource.Cells(i, wsSource.Columns.Count).Value & vbCrLf
+            wsSource.Rows(i).Delete
+        Else
+            nameDict.Add wsSource.Cells(i, wsSource.Columns.Count).Value, Nothing
+        End If
+    Next i
+    
+    ' Ersetze alle Werte im Arbeitsblatt "Personio bereinigt" mit den aktualisierten Daten
+    wsTarget.Cells.Clear
+    wsSource.UsedRange.Copy wsTarget.Cells(1, 1)
+    
+    ' Zeige die gelöschten Namen an
+    If Len(duplicateNames) > 0 Then
+        MsgBox "Folgende doppelte Namen wurden gelöscht:" & vbCrLf & duplicateNames, vbInformation
+    Else
+        MsgBox "Keine doppelten Namen gefunden.", vbInformation
+    End If
+    
+    ' Aufräumen
+    Set nameDict = Nothing
+End Sub
