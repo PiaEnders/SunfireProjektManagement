@@ -1,0 +1,29 @@
+Sub STD_in_FTE()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim i As Long, j As Long
+    Dim data As Variant
+
+    For Each ws In ThisWorkbook.Worksheets
+        If InStr(ws.Name, "spez Projektbudgetplan") > 0 Then
+            lastRow = ws.Cells(ws.Rows.Count, "C").End(xlUp).Row
+            lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+            
+            ' Read data into array
+            data = ws.Range(ws.Cells(2, 3), ws.Cells(lastRow, lastCol)).Value
+            
+            ' Perform multiplication in array
+            For i = 1 To UBound(data, 1)
+                For j = 1 To UBound(data, 2)
+                    If IsNumeric(data(i, j)) And data(i, j) <> "" Then
+                        data(i, j) = data(i, j) / 140
+                    End If
+                Next j
+            Next i
+            
+            ' Write data back to worksheet
+            ws.Range(ws.Cells(2, 3), ws.Cells(lastRow, lastCol)).Value = data
+        End If
+    Next ws
+End Sub
