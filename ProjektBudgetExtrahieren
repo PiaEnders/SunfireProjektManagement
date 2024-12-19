@@ -1,4 +1,4 @@
-Sub ProjektBudgetExtrahieren()
+Sub spez_Budgetplanung()
     Dim wsSource As Worksheet
     Dim wsTarget As Worksheet
     Dim wsName As String
