@@ -1,1 +1,82 @@
 
+Sub CopySelectedColumns()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim lastRowSource As Long
+    Dim startRow As Long
+    Dim i As Long
+    Dim row As Long
+    Dim sheetName As String
+    Dim sheetExists As Boolean
+    Dim counter As Integer
+    Dim tbl As ListObject
+    
+    ' Set the source worksheet
+    Set wsSource = ThisWorkbook.Sheets("NAV Auszug")
+    
+    ' Find the starting row where the headers are located
+    startRow = 0
+    For i = 1 To wsSource.Rows.Count
+        If wsSource.Cells(i, 1).Value = "Buchungsdatum" And _
+           wsSource.Cells(i, 7).Value = "Art" And _
+           wsSource.Cells(i, 15).Value = "Menge" Then
+            startRow = i
+            Exit For
+        End If
+    Next i
+    
+    If startRow = 0 Then
+        MsgBox "Headers not found!"
+        Exit Sub
+    End If
+    
+    ' Generate a unique worksheet name
+    sheetName = "IST Name Abt Dat"
+    sheetExists = True
+    counter = 1
+    
+    Do While sheetExists
+        On Error Resume Next
+        Set wsTarget = ThisWorkbook.Sheets(sheetName)
+        If Err.Number <> 0 Then
+            sheetExists = False
+        Else
+            sheetName = "IST Name Abt Dat " & counter
+            counter = counter + 1
+        End If
+        On Error GoTo 0
+    Loop
+    
+    ' Create a new worksheet with the unique name
+    Set wsTarget = ThisWorkbook.Sheets.Add
+    wsTarget.Name = sheetName
+    
+    ' Add headers to the target worksheet
+    wsTarget.Cells(1, 1).Value = "Buchungsdatum"
+    wsTarget.Cells(1, 2).Value = "Art"
+    wsTarget.Cells(1, 3).Value = "Beschreibung"
+    wsTarget.Cells(1, 4).Value = "Menge"
+    
+    ' Find the last used row in the source worksheet
+    lastRowSource = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
+    
+    ' Copy the data from the source worksheet to the target worksheet
+    row = 2
+    For i = startRow + 1 To lastRowSource
+        wsTarget.Cells(row, 1).Value = wsSource.Cells(i, 1).Value ' Buchungsdatum (Column A)
+        wsTarget.Cells(row, 2).Value = wsSource.Cells(i, 7).Value ' Art (Column G)
+        wsTarget.Cells(row, 3).Value = wsSource.Cells(i, 9).Value ' Beschreibung (Column I)
+        wsTarget.Cells(row, 4).Value = wsSource.Cells(i, 15).Value ' Menge (Column O)
+        row = row + 1
+    Next i
+    
+    ' Format Buchungsdatum column to yyyy-mm
+    For i = 2 To row - 1
+        wsTarget.Cells(i, 1).NumberFormat = "yyyy-mm"
+    Next i
+    
+    ' Create a table for the copied data
+    Set tbl = wsTarget.ListObjects.Add(xlSrcRange, wsTarget.Range("A1:D" & row - 1), , xlYes)
+    tbl.Name = "DataTbl"
+    tbl.TableStyle = "TableStyleMedium9"
+End Sub
