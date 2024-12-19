@@ -1,5 +1,4 @@
-
-Sub CopySelectedColumns()
+Sub NAVAggregieren()
     Dim wsSource As Worksheet
     Dim wsTarget As Worksheet
     Dim lastRowSource As Long
@@ -10,6 +9,9 @@ Sub CopySelectedColumns()
     Dim sheetExists As Boolean
     Dim counter As Integer
     Dim tbl As ListObject
+    Dim dict As Object
+    Dim key As Variant
+    Dim formattedDate As String
     
     ' Set the source worksheet
     Set wsSource = ThisWorkbook.Sheets("NAV Auszug")
@@ -58,17 +60,33 @@ Sub CopySelectedColumns()
     wsTarget.Cells(1, 4).Value = "Menge"
     
     ' Find the last used row in the source worksheet
-    lastRowSource = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
+    lastRowSource = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).row
     
-    ' Copy the data from the source worksheet to the target worksheet
-    row = 2
+    ' Initialize a dictionary to store aggregated data
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Aggregate the data from the source worksheet
     For i = startRow + 1 To lastRowSource
-        wsTarget.Cells(row, 1).Value = wsSource.Cells(i, 1).Value ' Buchungsdatum (Column A)
-        wsTarget.Cells(row, 2).Value = wsSource.Cells(i, 7).Value ' Art (Column G)
-        wsTarget.Cells(row, 3).Value = wsSource.Cells(i, 9).Value ' Beschreibung (Column I)
-        wsTarget.Cells(row, 4).Value = wsSource.Cells(i, 15).Value ' Menge (Column O)
-        row = row + 1
+        If wsSource.Cells(i, 7).Value = "Ressource" Then
+            formattedDate = Format(wsSource.Cells(i, 1).Value, "yyyy-mm")
+            key = formattedDate & "|" & wsSource.Cells(i, 9).Value
+            If dict.exists(key) Then
+                dict(key) = dict(key) + wsSource.Cells(i, 15).Value
+            Else
+                dict.Add key, wsSource.Cells(i, 15).Value
+            End If
+        End If
     Next i
+    
+    ' Copy the aggregated data to the target worksheet
+    row = 2
+    For Each key In dict.keys
+        wsTarget.Cells(row, 1).Value = Split(key, "|")(0) ' Buchungsdatum
+        wsTarget.Cells(row, 2).Value = "Ressource" ' Art
+        wsTarget.Cells(row, 3).Value = Split(key, "|")(1) ' Beschreibung
+        wsTarget.Cells(row, 4).Value = dict(key) ' Menge
+        row = row + 1
+    Next key
     
     ' Format Buchungsdatum column to yyyy-mm
     For i = 2 To row - 1
@@ -80,3 +98,4 @@ Sub CopySelectedColumns()
     tbl.Name = "DataTbl"
     tbl.TableStyle = "TableStyleMedium9"
 End Sub
+
