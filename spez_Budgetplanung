@@ -38,7 +38,7 @@ Sub ExtractProjectBudgetData()
     headerRow = 0
     headerCol = 0
     For i = 1 To wsSource.Rows.Count
-        For j = 1 To wsSource.Columns.Count
+        For j = 4 To wsSource.Columns.Count ' Suche ab Spalte D
             If wsSource.Cells(i, j).Value = 2021 Then
                 headerRow = i
                 headerCol = j
@@ -81,12 +81,17 @@ Sub ExtractProjectBudgetData()
     
     If endRow = 0 Then endRow = lastRow
     
-   
-    
+    ' Füge zusätzliche Zeilen hinzu, wenn die Zellen leer sind
+    Do While endRow < lastRow And (IsEmpty(wsSource.Cells(endRow + 1, headerCol)) Or wsSource.Cells(endRow + 1, headerCol).Value = projectNumber)
+        endRow = endRow + 1
+    Loop
     
     ' Kopiere die Daten ins neue Arbeitsblatt
     wsSource.Range(wsSource.Cells(startRow, 4), wsSource.Cells(endRow, wsSource.Cells(startRow, wsSource.Columns.Count).End(xlToLeft).Column)).Copy
     wsTarget.Cells(2, 1).PasteSpecial xlPasteValues
+    
+    ' Lösche Spalte C im neuen Arbeitsblatt
+    wsTarget.Columns("C").Delete
     
     ' Formatierung als Tabelle
     Dim tbl As ListObject
