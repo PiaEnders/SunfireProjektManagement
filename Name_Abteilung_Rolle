@@ -1,3 +1,4 @@
+'aus Jedox und aus Personio
 Sub KopiereUndVergleicheOptimiert()
     Dim wsSource As Worksheet
     Dim wsTarget As Worksheet
