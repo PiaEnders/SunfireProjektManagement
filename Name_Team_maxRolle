@@ -1,1 +1,66 @@
-
+Sub KopiereUndBerechneRolle()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim wsName As String
+    Dim lastRow As Long
+    Dim i As Long
+    Dim prozentanteil1Col As Long
+    Dim prozentanteil2Col As Long
+    Dim rolle1Col As Long
+    Dim rolle2Col As Long
+    Dim rolleCol As Long
+    
+    ' Setze den Namen des Zielarbeitsblatts
+    wsName = "Name_Abt_maxRolle"
+    
+    ' Versuche, das Zielarbeitsblatt zu setzen, wenn es existiert, andernfalls erstelle ein neues
+    On Error Resume Next
+    Set wsTarget = ThisWorkbook.Sheets(wsName)
+    On Error GoTo 0
+    If wsTarget Is Nothing Then
+        Set wsTarget = ThisWorkbook.Sheets.Add
+        wsTarget.Name = wsName
+    Else
+        wsTarget.Cells.Clear
+    End If
+    
+    ' Setze das Quellarbeitsblatt
+    Set wsSource = ThisWorkbook.Sheets("Getrennt Employees and Function")
+    
+    ' Kopiere die Daten aus dem Quellarbeitsblatt in das Zielarbeitsblatt
+    wsSource.UsedRange.Copy wsTarget.Cells(1, 1)
+    
+    ' Finde die Spaltenindizes für Prozentanteil 1, Prozentanteil 2, Rolle 1 und Rolle 2
+    prozentanteil1Col = Application.Match("Prozentanteil 1", wsTarget.Rows(1), 0)
+    prozentanteil2Col = Application.Match("Prozentanteil 2", wsTarget.Rows(1), 0)
+    rolle1Col = Application.Match("Rolle 1", wsTarget.Rows(1), 0)
+    rolle2Col = Application.Match("Rolle 2", wsTarget.Rows(1), 0)
+    
+    ' Füge die neue Spalte "Rolle" hinzu
+    rolleCol = wsTarget.Cells(1, wsTarget.Columns.Count).End(xlToLeft).Column + 1
+    wsTarget.Cells(1, rolleCol).Value = "Rolle"
+    
+    ' Finde die letzte benutzte Zeile
+    lastRow = wsTarget.Cells(wsTarget.Rows.Count, "A").End(xlUp).Row
+    
+    ' Berechne die Werte für die Spalte "Rolle"
+    For i = 2 To lastRow
+        If wsTarget.Cells(i, prozentanteil1Col).Value > wsTarget.Cells(i, prozentanteil2Col).Value Then
+            wsTarget.Cells(i, rolleCol).Value = wsTarget.Cells(i, rolle1Col).Value
+        ElseIf wsTarget.Cells(i, prozentanteil1Col).Value < wsTarget.Cells(i, prozentanteil2Col).Value Then
+            If InStr(wsTarget.Cells(i, rolle1Col).Value, "Head") > 0 Then
+                wsTarget.Cells(i, rolleCol).Value = wsTarget.Cells(i, rolle1Col).Value
+            Else
+                wsTarget.Cells(i, rolleCol).Value = wsTarget.Cells(i, rolle2Col).Value
+            End If
+        Else
+            wsTarget.Cells(i, rolleCol).Value = wsTarget.Cells(i, rolle2Col).Value
+        End If
+    Next i
+    
+    ' Lösche die Spalten "Prozentanteil 1", "Prozentanteil 2", "Rolle 1" und "Rolle 2"
+    wsTarget.Columns(prozentanteil1Col).Delete
+    wsTarget.Columns(prozentanteil2Col).Delete
+    wsTarget.Columns(rolle1Col).Delete
+    wsTarget.Columns(rolle2Col).Delete
+End Sub
