@@ -7,9 +7,12 @@ Sub spez_Budgetplanung()
     Dim lastRow As Long
     Dim startRow As Long
     Dim endRow As Long
-    Dim i As Long
+    Dim i As Long, j As Long
     Dim headerRow As Long
     Dim headerCol As Long
+    Dim currentYear As String
+    Dim monthNames As Variant
+    monthNames = Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     
     ' Setze die Quelle Arbeitsblatt
     Set wsSource = ThisWorkbook.Sheets("Jedox - Personnel - overview")
@@ -39,7 +42,7 @@ Sub spez_Budgetplanung()
     headerCol = 0
     For i = 1 To wsSource.Rows.Count
         For j = 4 To wsSource.Columns.Count ' Suche ab Spalte D
-            If wsSource.Cells(i, j).Value = 2021 Then
+            If IsNumeric(wsSource.Cells(i, j).Value) And Len(wsSource.Cells(i, j).Value) = 4 Then
                 headerRow = i
                 headerCol = j
                 Exit For
@@ -49,13 +52,23 @@ Sub spez_Budgetplanung()
     Next i
     
     If headerRow = 0 Then
-        MsgBox "Überschrift 2021 nicht gefunden.", vbExclamation
+        MsgBox "Überschrift Jahr nicht gefunden.", vbExclamation
         Exit Sub
     End If
     
     ' Setze die Überschriften ab Spalte D
+    currentYear = ""
     For i = headerCol To wsSource.Cells(headerRow, wsSource.Columns.Count).End(xlToLeft).Column
-        wsTarget.Cells(1, i - headerCol + 4).Value = wsSource.Cells(headerRow, i).Value
+        If IsNumeric(wsSource.Cells(headerRow, i).Value) And Len(wsSource.Cells(headerRow, i).Value) = 4 Then
+            currentYear = wsSource.Cells(headerRow, i).Value
+            wsTarget.Cells(1, i - headerCol + 4).Value = currentYear
+        ElseIf Not IsEmpty(wsSource.Cells(headerRow, i).Value) Then
+            If currentYear <> "" Then
+                wsTarget.Cells(1, i - headerCol + 4).Value = currentYear & "-" & Format(Application.Match(wsSource.Cells(headerRow, i).Value, monthNames, 0), "00")
+            Else
+                wsTarget.Cells(1, i - headerCol + 4).Value = wsSource.Cells(headerRow, i).Value
+            End If
+        End If
     Next i
     
     ' Suche die Start- und Endzeile basierend auf der Projektnummer
@@ -114,10 +127,3 @@ Function SheetExists(sheetName As String) As Boolean
     On Error GoTo 0
 End Function
 
-Function SheetExists(sheetName As String) As Boolean
-    Dim ws As Worksheet
-    On Error Resume Next
-    Set ws = ThisWorkbook.Sheets(sheetName)
-    SheetExists = Not ws Is Nothing
-    On Error GoTo 0
-End Function
