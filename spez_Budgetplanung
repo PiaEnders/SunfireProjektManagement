@@ -1,4 +1,4 @@
-Sub ExtractProjectBudgetData()
+Sub ProjektBudgetExtrahieren()
     Dim wsSource As Worksheet
     Dim wsTarget As Worksheet
     Dim wsName As String
@@ -19,12 +19,12 @@ Sub ExtractProjectBudgetData()
     If projectNumber = "" Then Exit Sub
     
     ' Finde den Namen für das neue Arbeitsblatt
-    wsName = "spez Projektbudgetplan"
-    counter = 1
-    Do While SheetExists(wsName)
-        wsName = "spezifische Projektbudgetplanung" & counter
+    wsName = "spez Projektbudgetplan "
+    counter = 2
+    Do While SheetExists(wsName & counter)
         counter = counter + 1
     Loop
+    wsName = wsName & counter
     
     ' Erstellt das neue Arbeitsblatt
     Set wsTarget = ThisWorkbook.Sheets.Add
@@ -105,6 +105,14 @@ Sub ExtractProjectBudgetData()
     
     MsgBox "Die Daten wurden erfolgreich extrahiert und formatiert.", vbInformation
 End Sub
+
+Function SheetExists(sheetName As String) As Boolean
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets(sheetName)
+    SheetExists = Not ws Is Nothing
+    On Error GoTo 0
+End Function
 
 Function SheetExists(sheetName As String) As Boolean
     Dim ws As Worksheet
