@@ -1,0 +1,52 @@
+Sub CreateOrUpdateNAVnachRolleAgg()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim sheetName As String
+    Dim sheetExists As Boolean
+    Dim counter As Integer
+    Dim maxNumber As Integer
+    Dim tempNumber As Integer
+    Dim i As Integer
+    Dim rowCount As Long
+
+    ' Loop through all worksheets to find the source worksheet with the highest number
+    maxNumber = 0
+    For i = 1 To ThisWorkbook.Sheets.Count
+        If ThisWorkbook.Sheets(i).name Like "NAV_Abt&Rolle_zugeordnet*" Then
+            If ThisWorkbook.Sheets(i).name = "NAV_Abt&Rolle_zugeordnet" Then
+                tempNumber = 0
+            Else
+                tempNumber = Val(Mid(ThisWorkbook.Sheets(i).name, 25))
+            End If
+            If tempNumber > maxNumber Then
+                maxNumber = tempNumber
+                Set wsSource = ThisWorkbook.Sheets(i)
+            End If
+        End If
+    Next i
+    
+    If wsSource Is Nothing Then
+        MsgBox "Source worksheet not found!"
+        Exit Sub
+    End If
+    
+    ' Check if 'NAV nach Rolle agg' worksheet exists
+    On Error Resume Next
+    Set wsTarget = ThisWorkbook.Sheets("NAV nach Rolle agg")
+    On Error GoTo 0
+    
+    If wsTarget Is Nothing Then
+        ' Create a new worksheet if it does not exist
+        Set wsTarget = ThisWorkbook.Sheets.Add
+        wsTarget.name = "NAV nach Rolle agg"
+    Else
+        ' Clear the existing worksheet if it exists
+        wsTarget.Cells.Clear
+    End If
+    
+    ' Copy data from source worksheet to target worksheet
+    wsSource.UsedRange.Copy Destination:=wsTarget.Range("A1")
+    
+    ' Inform the user
+    MsgBox "Data copied to worksheet: 'NAV nach Rolle agg'"
+End Sub
