@@ -1,0 +1,84 @@
+Sub ExtractProjectBudgetData()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim wsName As String
+    Dim counter As Integer
+    Dim projectNumber As String
+    Dim lastRow As Long
+    Dim startRow As Long
+    Dim endRow As Long
+    Dim i As Long
+
+    ' Setze die Quelle Arbeitsblatt
+    Set wsSource = ThisWorkbook.Sheets("Jedox - Personnel - overview")
+
+    ' Frage die Projektnummer ab
+    projectNumber = InputBox("Bitte gebe die gewünschte Projektnummer ein:")
+    If projectNumber = "" Then Exit Sub
+
+    ' Finde den Namen für das neue Arbeitsblatt
+    wsName = "spez Projektbudgetplan"
+    counter = 1
+    Do While SheetExists(wsName)
+        wsName = "spezifische Projektbudgetplanung" & counter
+        counter = counter + 1
+    Loop
+
+    ' Erstellt das neue Arbeitsblatt
+    Set wsTarget = ThisWorkbook.Sheets.Add
+    wsTarget.Name = wsName
+
+    ' Setze die Überschriften
+    wsTarget.Cells(1, 1).Value = "Projekt Nr"
+    wsTarget.Cells(1, 2).Value = "Rolle"
+    For i = 3 To wsSource.Cells(7, wsSource.Columns.Count).End(xlToLeft).Column
+        wsTarget.Cells(1, i).Value = wsSource.Cells(7, i - 4).Value
+    Next i
+
+    ' Suche die Start- und Endzeile basierend auf der Projektnummer
+    lastRow = wsSource.Cells(wsSource.Rows.Count, 4).End(xlUp).Row
+    For i = 1 To lastRow
+        If wsSource.Cells(i, 4).Value = projectNumber Then
+            startRow = i
+            Exit For
+        End If
+    Next i
+    
+    If startRow = 0 Then
+        MsgBox "Projektnummer nicht gefunden.", vbExclamation
+        Exit Sub
+    End If
+
+    For i = startRow To lastRow
+        If wsSource.Cells(i, 4).Value <> projectNumber Then
+            endRow = i - 1
+            Exit For
+        End If
+    Next i
+
+    If endRow = 0 Then endRow = lastRow
+
+    ' Kopiere die Daten ins neue Arbeitsblatt
+    wsSource.Range(wsSource.Cells(startRow, 4), wsSource.Cells(endRow, wsSource.Cells(7, wsSource.Columns.Count).End(xlToLeft).Column)).Copy
+    wsTarget.Cells(2, 1).PasteSpecial xlPasteValues
+
+    ' Formatierung als Tabelle
+    Dim tbl As ListObject
+    Set tbl = wsTarget.ListObjects.Add(xlSrcRange, wsTarget.Range("A1").CurrentRegion, , xlYes)
+    tbl.Name = "ProjektBudgetTabelle"
+    tbl.TableStyle = "TableStyleMedium9"
+
+    ' Aufräumen
+    Application.CutCopyMode = False
+    wsTarget.Cells(1, 1).Select
+
+    MsgBox "Die Daten wurden erfolgreich extrahiert und formatiert.", vbInformation
+End Sub
+
+ Function SheetExists(sheetName As String) As Boolean
+   Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets(sheetName)
+    SheetExists = Not ws Is Nothing
+    On Error GoTo 0
+End Function
