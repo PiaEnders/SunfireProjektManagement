@@ -37,7 +37,7 @@ Sub spez_Budgetplanung()
     wsTarget.Cells(1, 1).Value = "Projekt Nr"
     wsTarget.Cells(1, 2).Value = "Rolle"
     
-    ' Suche nach der Zeile und Spalte mit der Überschrift 2021
+    ' Suche nach der Zeile und Spalte mit der Überschrift Jahr
     headerRow = 0
     headerCol = 0
     For i = 1 To wsSource.Rows.Count
@@ -62,9 +62,15 @@ Sub spez_Budgetplanung()
         If IsNumeric(wsSource.Cells(headerRow, i).Value) And Len(wsSource.Cells(headerRow, i).Value) = 4 Then
             currentYear = wsSource.Cells(headerRow, i).Value
             wsTarget.Cells(1, i - headerCol + 4).Value = currentYear
-        ElseIf Not IsEmpty(wsSource.Cells(headerRow, i).Value) Then
+        ElseIf Not IsEmpty(wsSource.Cells(headerRow, i).Value) And wsSource.Cells(headerRow, i).Value <> "Total (Months)" Then
             If currentYear <> "" Then
-                wsTarget.Cells(1, i - headerCol + 4).Value = currentYear & "-" & Format(Application.Match(wsSource.Cells(headerRow, i).Value, monthNames, 0), "00")
+                Dim monthIndex As Variant
+                monthIndex = Application.Match(wsSource.Cells(headerRow, i).Value, monthNames, 0)
+                If Not IsError(monthIndex) Then
+                    wsTarget.Cells(1, i - headerCol + 4).Value = currentYear & "-" & Format(monthIndex, "00")
+                Else
+                    wsTarget.Cells(1, i - headerCol + 4).Value = wsSource.Cells(headerRow, i).Value
+                End If
             Else
                 wsTarget.Cells(1, i - headerCol + 4).Value = wsSource.Cells(headerRow, i).Value
             End If
@@ -126,4 +132,3 @@ Function SheetExists(sheetName As String) As Boolean
     SheetExists = Not ws Is Nothing
     On Error GoTo 0
 End Function
-
