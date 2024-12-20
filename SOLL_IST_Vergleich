@@ -1,0 +1,82 @@
+Sub SOLL_IST_Vergleich()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim wsSoll As Worksheet
+    Dim lastRowSource As Long
+    Dim lastRowSoll As Long
+    Dim i As Long
+    Dim dict As Object
+    Dim key As String
+    Dim matchFound As Boolean
+    
+    ' Prevent screen updating and automatic calculation
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    
+    ' Set the source worksheet
+    Set wsSource = ThisWorkbook.Sheets("Aggregated Data")
+    
+    ' Check if the source worksheet exists
+    If wsSource Is Nothing Then
+        MsgBox "Source worksheet 'Aggregated Data' not found!"
+        Exit Sub
+    End If
+    
+    ' Check if the target worksheet exists, if not, create it
+    On Error Resume Next
+    Set wsTarget = ThisWorkbook.Sheets("SOLL IST Vergleich")
+    On Error GoTo 0
+    
+    If wsTarget Is Nothing Then
+        Set wsTarget = ThisWorkbook.Sheets.Add
+        wsTarget.name = "SOLL IST Vergleich"
+    Else
+        wsTarget.Cells.Clear
+    End If
+    
+    ' Copy data from source worksheet to target worksheet
+    wsSource.UsedRange.Copy Destination:=wsTarget.Range("A1")
+    
+    ' Find the worksheet containing the string "entpivotisierte Tabelle"
+    For Each ws In ThisWorkbook.Worksheets
+        If InStr(ws.name, "entpivotisiert") > 0 Then
+            Set wsSoll = ws
+            Exit For
+        End If
+    Next ws
+    
+    If wsSoll Is Nothing Then
+        MsgBox "Worksheet containing 'entpivotisiert' not found!"
+        Exit Sub
+    End If
+
+    ' Find the last used rows in the source and Soll worksheets
+    lastRowSource = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).row
+    lastRowSoll = wsSoll.Cells(wsSoll.Rows.Count, 1).End(xlUp).row
+    
+    ' Create a dictionary to store Soll values
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Populate the dictionary with Soll values
+    For i = 2 To lastRowSoll
+        key = wsSoll.Cells(i, 1).Value & "|" & Format(wsSoll.Cells(i, 2).Value, "yyyy-mm")
+        dict(key) = wsSoll.Cells(i, 3).Value ' Assuming Soll value is in column 3 of wsSoll
+    Next i
+    
+    ' Add Soll values to the target worksheet
+    For i = 2 To lastRowSource
+        key = wsSource.Cells(i, 3).Value & "|" & Format(wsSource.Cells(i, 1).Value, "yyyy-mm")
+        If dict.exists(key) Then
+            wsTarget.Cells(i, 5).Value = dict(key)
+        Else
+            wsTarget.Cells(i, 5).Value = ""
+        End If
+    Next i
+    
+    ' Re-enable screen updating and automatic calculation
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    
+    ' Inform the user
+    MsgBox "Data copied and matched to worksheet: 'SOLL IST Vergleich'"
+End Sub
