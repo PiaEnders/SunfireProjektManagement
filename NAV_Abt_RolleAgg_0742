@@ -1,0 +1,49 @@
+Sub NAV_Abt_RolleAgg_0742()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim sourceData As Variant
+    Dim targetData As Variant
+    Dim lastRow As Long
+    Dim lastCol As Long
+    
+    ' Set the source worksheet
+    Set wsSource = ThisWorkbook.Sheets("NAV nach Rolle agg")
+    
+    ' Check if the source worksheet exists
+    If wsSource Is Nothing Then
+        MsgBox "Source worksheet 'NAV nach Rolle agg' not found!"
+        Exit Sub
+    End If
+    
+    ' Set the target worksheet
+    Set wsTarget = ThisWorkbook.Sheets("Aggregated Data")
+    
+    ' Check if the target worksheet exists
+    If wsTarget Is Nothing Then
+        MsgBox "Target worksheet 'Aggregated Data' not found!"
+        Exit Sub
+    End If
+    
+    ' Clear existing data in the target worksheet
+    wsTarget.Cells.Clear
+    
+    ' Get the last row and column in the source worksheet
+    lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).row
+    lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
+    
+    ' Read data from the source worksheet into an array
+    sourceData = wsSource.Range(wsSource.Cells(1, 1), wsSource.Cells(lastRow, lastCol)).Value
+    
+    ' Write data from the array to the target worksheet
+    wsTarget.Range(wsTarget.Cells(1, 1), wsTarget.Cells(lastRow, lastCol)).Value = sourceData
+    
+    ' Create the new table
+    Dim tbl As ListObject
+    Dim tblRange As Range
+    Set tblRange = wsTarget.Range(wsTarget.Cells(1, 1), wsTarget.Cells(lastRow, lastCol))
+    Set tbl = wsTarget.ListObjects.Add(xlSrcRange, tblRange, , xlYes)
+    tbl.name = "NAV_Abt_RolleAgg"
+    
+    ' Inform the user
+    MsgBox "Data copied and table 'NAV_Abt_RolleAgg' created in worksheet: 'Aggregated Data'"
+End Sub
